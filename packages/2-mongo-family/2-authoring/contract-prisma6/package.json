@@ -1,0 +1,13 @@
+{
+  "name": "@internal/mongo-contract-prisma6",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./provider": "./src/provider.ts"
+  },
+  "dependencies": {
+    "@internal/config": "workspace:8.0.0-rc.11",
+    "@internal/mongo-contract-psl": "workspace:8.0.0-rc.11"
+  }
+}

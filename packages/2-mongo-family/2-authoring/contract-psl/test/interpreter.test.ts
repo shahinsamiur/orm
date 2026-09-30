@@ -145,9 +145,9 @@ describe('interpretPslDocumentToMongoContract', () => {
   it('resolves missing enum factory diagnostics from the enum block node', () => {
     const input = buildSymbolTableInput(
       `enum Role {
-  USER
-}
-`,
+        USER
+      }
+      `,
       'enum-owned.prisma',
     );
     const enumBlock = input.symbolTable.topLevel.blocks['Role'];
