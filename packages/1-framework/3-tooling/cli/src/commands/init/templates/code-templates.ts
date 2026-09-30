@@ -298,15 +298,27 @@ export function configFile(
   target: TargetId,
   contractPath: string,
   resolveImportSpecifier: ImportSpecifierResolver = keepInternalSpecifiers,
+  authoring?: AuthoringId,
 ): string {
   const configEntrypoint = targetEntrypoint(target, 'config', resolveImportSpecifier);
+
+  const usePrisma6Schema = target === 'mongo' && authoring === 'psl';
+
+  const contractImport = usePrisma6Schema
+    ? `import { defineConfig as ormConfig, prisma6Schema } from '${configEntrypoint}';`
+    : `import { defineConfig as ormConfig } from '${configEntrypoint}';`;
+
+  const contractExpression = usePrisma6Schema
+    ? `prisma6Schema(${JSON.stringify(contractPath)})`
+    : JSON.stringify(contractPath);
+
   return `import 'dotenv/config';
 import { definePrismaConfig } from '@prisma/cli-engine';
-import { defineConfig as ormConfig } from '${configEntrypoint}';
+${contractImport}
 
 export default definePrismaConfig({
   orm: ormConfig({
-    contract: ${JSON.stringify(contractPath)},
+    contract: ${contractExpression},
     db: {
       connection: process.env['DATABASE_URL']!,
     },
@@ -314,7 +326,6 @@ export default definePrismaConfig({
 });
 `;
 }
-
 export function dbFile(
   target: TargetId,
   resolveImportSpecifier: ImportSpecifierResolver = keepInternalSpecifiers,

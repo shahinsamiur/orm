@@ -325,6 +325,12 @@
       "plane": "shared"
     },
     {
+      "glob": "packages/2-mongo-family/2-authoring/contract-prisma6/**",
+      "domain": "mongo",
+      "layer": "authoring",
+      "plane": "shared"
+    },
+    {
       "glob": "packages/3-extensions/mongo/src/config/**",
       "domain": "extensions",
       "layer": "adapters",
