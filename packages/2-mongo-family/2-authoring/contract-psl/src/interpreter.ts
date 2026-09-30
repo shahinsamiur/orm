@@ -47,6 +47,7 @@ import type {
   ModelSymbol,
   NamespaceSymbol,
   PslSpan,
+  ResolvedAttribute,
   SymbolTable,
   TypedFuncCall,
 } from '@internal/psl-parser';
@@ -144,6 +145,18 @@ function unsupportedFieldAttributeMessage(
   return hint === undefined ? base : `${base}. ${hint}`;
 }
 
+function isPrisma6ObjectIdAttribute(attribute: ResolvedAttribute): boolean {
+  return attribute.name === 'db.ObjectId';
+}
+
+function isPrisma6ObjectIdDefault(attribute: ResolvedAttribute): boolean {
+  return (
+    attribute.name === 'default' &&
+    attribute.args.length === 1 &&
+    attribute.args[0]?.value === 'auto()'
+  );
+}
+
 function reportUnknownAttributes(input: {
   readonly models: readonly ModelSymbol[];
   readonly compositeTypes: readonly CompositeTypeSymbol[];
@@ -165,6 +178,15 @@ function reportUnknownAttributes(input: {
     for (const field of Object.values(owner.fields)) {
       for (const attribute of field.attributes) {
         if (Object.hasOwn(mongoAttributeSpecs.field, attribute.name)) continue;
+        if (isPrisma6ObjectIdAttribute(attribute)) continue;
+
+        if (
+          isPrisma6ObjectIdDefault(attribute) &&
+          field.attributes.some(isPrisma6ObjectIdAttribute)
+        ) {
+          continue;
+        }
+
         diagnostics.push({
           code: 'PSL_UNSUPPORTED_FIELD_ATTRIBUTE',
           message: unsupportedFieldAttributeMessage(owner.name, field.name, attribute.name),
@@ -970,6 +992,13 @@ function resolveFieldCodecId(
   field: FieldSymbol,
   scalarTypeCodecIds: ReadonlyMap<string, string>,
 ): string | undefined {
+  if (
+    field.typeName === 'String' &&
+    field.attributes.some(isPrisma6ObjectIdAttribute)
+  ) {
+    return scalarTypeCodecIds.get(MONGO_OBJECT_ID_PSL_TYPE);
+  }
+
   return scalarTypeCodecIds.get(field.typeName);
 }
 
@@ -1091,6 +1120,25 @@ export function interpretPslDocumentToMongoContract(
   const { symbolTable, sources, scalarTypeCodecIds, codecLookup } = input;
   const diagnostics = createPslDiagnosticCollector(sources);
   const topLevel = symbolTable.topLevel;
+
+  for (const block of Object.values(topLevel.blocks)) {
+    switch (block.keyword) {
+      case 'datasource':
+      case 'generator':
+      case 'enum':
+      case 'model':
+      case 'type':
+        break;
+
+      default:
+        diagnostics.push({
+          code: 'PSL.PRISMA6_MONGO_UNSUPPORTED_TOP_LEVEL_BLOCK',
+          message: `Mongo Prisma 6 schema does not support top-level block "${block.keyword}"`,
+          ...diagnosticSource(sources, block.node.syntax).at(block.span),
+        });
+    }
+  }
+
   validateNamespaceBlocksForMongoTarget({
     namespaces: Object.values(topLevel.namespaces),
     sources,

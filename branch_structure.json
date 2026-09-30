@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "fix/orm-init-prisma6-mongodb",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "fix/orm-init-prisma6-mongodb": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "fix/orm-init-prisma6-mongodb",
+    "origin"
+  ]
+}

@@ -183,7 +183,8 @@ function planScaffold(ctx: {
     },
     {
       path: CONFIG_FILE,
-      content: configFile(inputs.target, configContractPath, resolveImportSpecifier),
+      content: configFile( inputs.target, configContractPath, resolveImportSpecifier, inputs.authoring,
+),
     },
     { path: join(schemaDir, 'db.ts'), content: dbFile(inputs.target, resolveImportSpecifier) },
     {
